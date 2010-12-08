@@ -5,7 +5,7 @@ var commands = {
     say: [1, 500, {
         command: function(msg, args) {
             if (args[0] === '!kitten') {
-                msg('Nicez trys, but ma tail haz optimized your recursions away!');
+                msg('Nice try, did you really think that would work? I mean, are you really *that* stupid?');
             
             } else {
                 msg(args.join(' '));
@@ -15,15 +15,18 @@ var commands = {
     
     help: [0, 20, {
         command: function(msg, args) {
-            msg('    Kitten gives you help  cmd|reputation [params] (but only every 15 seconds)\n'
-                          + '         help|20                     # I show you this! Me deletes it after 30 seconds\n'
-                          + '            ?|20    [thing]          # I tell you what me thinks about [thing]\n'
-                          + '          say|500   [text]           # I say somethingz for you!\n'
-                          + '        think|5000  [thing] [thinks] # makes me think about things...\n'
-                          + '          ban|5000  [username|id]    # makes me not like one\n'
-                          + '        unban|5000  [username|id]    # makes me like one again\n'
-                          + '         bans|2500                   # shows you who I not like\n'
-                          + '       wisdom|150   [username|id]    # wise words from [username], Me deletes it after 1 minute',
+            msg('    Just because I have mercy with you:\n'
+                          + '     help  |  20                   # Shows the help, for 30 seconds.\n'
+                          + '     ?     |  20  [thing]          # Ask me about my opinion on something.\n'
+                          + '     say   | 500  [text]           # Let me say something for you, it will instantly\n'
+                          + '                                       sound a trillion times smarter.\n'
+                          + '     think |5000  [thing] [thinks] # Tell me something intersting, or just don\'t talk at all.\n'
+                          + '     ban   |5000  [username|id]    # Make an educates guess what that could possibly do.\n'
+                          + '     unban |5000  [username|id]    # Unbans. But why? You banned him for a reason.\n'
+                          + '                                       Or just for fun, like I do all the time.\n'
+                          + '     bans  |2500                   # A list of *people*.\n'
+                          + '     wisdom| 150  [username|id]    # Get some wisdom, but better get it quick,\n'
+                          + '                                     since it will only stay 1 minute,',
             30000);
         }
     }],
@@ -31,7 +34,7 @@ var commands = {
     bans: [0, 1500, {
         command: function(msg, args) {
             if (this.chat.usersBanned.length === 0) {
-                msg('**Me likes you all! ^.^"** ');
+                msg('**Nobody\'s banned**. WTF? Your kidding me, I\'d ban half the internet if I could, but well your decision...');
             
             } else {
                 this.chat.getUserInfo(this.chat.usersBanned, function(users) {
@@ -39,7 +42,7 @@ var commands = {
                     for(var i = 0; i < users.length; i++) {
                         names.push(users[i].name);
                     }
-                    msg('**Me not likes:** ' + names.join(', '), 15000); 
+                    msg('These people are **banned**, you better like kittens otherwise you\'ll join them **very soon**: ' + names.join(', '), 15000); 
                 });
             }
        }
@@ -47,7 +50,6 @@ var commands = {
     
     wisdom: [1, 150, {
         command: function(msg, args) {
-            console.log('resolving');
             this.chat.resolveUser(args.join(' '), function(id, username) {
                 this.getAnswer(msg, id);
             }, this);
@@ -90,7 +92,7 @@ var commands = {
                     msg('http://' + this.mainURL + answers[0], 60000);
                 
                 } else {
-                    msg('Kitten couldnt find wise words from ' + (username ? username : '#' + id));
+                    msg('Guess you\'re out of luck with ' + (username ? username : '#' + id) + '. *Yawn* I nearly fell a sleep when checking his answers.');
                 }
             };
         }
@@ -102,11 +104,11 @@ var commands = {
             var id = args[0].replace(/\+/g, ' ').toLowerCase();
             if (text) {
                 this.chat.thougthList[id] = text;
-                msg('Thanks u much! Kitten now knows moar!');
+                msg('**' + id +'**? Sounds tnteresting, gonna write that down, yes on *real* paper, and no, papers\'s not edible.');
             
             } else if (this.chat.thougthList[id]) {
                 delete this.chat.thougthList[id];
-                msg('Kitten has forgotten... but what?');
+                msg('Well let\'s just forget about **' + id +'** then, I have better things to remeber anyways.');
             }
         }
     }],
@@ -115,10 +117,10 @@ var commands = {
         command: function(msg, args) {
             this.chat.resolveUser(args.join(' '), function(id, username) {
                 if (id === this.chat.userID) {
-                    msg('Kitten not stupid! **Go away!**');
+                    msg('Seriously, do you think I\'m stupid? Better get out, before I use my kitten eyes and force you into deleting your own account.');
                 
                 } else if (this.chat.usersLove.indexOf(id) !== -1) {
-                    msg('Kitten *loves* you ' + (username ? username : '#' + id) + ' so does not ban you ^_^"');
+                    msg('They may say that cats are not loyal, but I consider friendship serious buisness pal. In short: No ban for ' + (username ? username : '#' + id));
                 
                 } else if (!isNaN(id) && this.chat.usersBanned.indexOf(id) === -1) {
                     this.chat.usersBanned.push(id);
@@ -126,7 +128,7 @@ var commands = {
                         this.chat.userCache[id].banned = true;
                         this.chat.userCache[id].banInfo = false;
                     }
-                    msg('Me is sorry for banning you ' + (username ? username : '#' + id));
+                    msg('Congratulations ' + (username ? username : '#' + id) + ' you have been rewarded with the [BANNED]-Badge.');
                 }
             }, this);
         }
@@ -141,7 +143,7 @@ var commands = {
                         this.chat.userCache[id].banned = false;
                         this.chat.userCache[id].banInfo = false;
                     }   
-                    msg('Me likes you again ' + (username ? username : '#' + id) + ' ^.^"');
+                    msg('*How much* did you pay them for **that** ' + (username ? username : '#' + id) + '? Whatever consider your self lucky... this time...');
                 }
             }, this);
         }
@@ -175,7 +177,7 @@ var ChatCommand = Class(function(chat, count, rep) {
         };
         
         var now = new Date().getTime();
-        var user = this.chat.userCache[uid];        
+        var user = this.chat.userCache[uid];
         if (!user || user.rep < this.rep) {
             return false;
         

@@ -6,9 +6,9 @@ var Class = require('neko').Class;
 var command = require('./command');
 
 
-// Chat Bot --------------------------------------------------------------------
+// Kitten ----------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-var ChatBot = Class(function(config, rooms) {
+var Kitten = Class(function(config, rooms) {
     this.config = this.$loadFile(config);
     
     // Static things
@@ -27,12 +27,33 @@ var ChatBot = Class(function(config, rooms) {
     this.userCache = {};
     
     // Specials
-    this.thougthList = this.$loadFile('answers.list') || {};
-    
+    this.thougthList = this.$loadFile('thoughts.list') || {};
+    var stuff = {
+        "roll":"http://www.youtube.com/watch?v=mv5qzMtLE60",
+        "ninja":"Coding Ninjas? Aren't Ninjas supposed to be  *agile*,*concise*, *know what they do* and be able to survive without any help? And what\'s a coder? Yeah, most of them can\'t even survive without static typing.",
+        "crockford": "Ah good ol\' Crock, you read his book, haven\'t you? Now let me tell you a little secret, I\'ve written the half of it, why? Well Doug was busy kicking the IE-Team\'s buts.",
+        "answer to life":"42.000000000001 *Luckily they don\'t have this floating point bullshit in the future.*",
+        "java":"Everytime you say Java, I kill a carpet. *Twice*.",
+        "dog":"Dogs, pity little objects of human abuse, I mean just look at them.",
+        "kitten":"That\'s my name. Well actually my full name is Kitten Gustaf Theodor Johanson of Rijkvek the 4th, sound *impressive* hm? You know what else sounds impressive? **Leave me the fuck alone!**",
+        "recursion":"Still using recursion? That\'s such a one dimensional concept, I compute my stuff with a quantum map reduce, ain.",
+        "help":"There you go: http://stackoverflow.com/questions/ask Now leave me alone with the nonsense you call 'Problems', get a degree in Quatum Subspace Mechanics and *then* we can talk again.",
+        "nick craver":"Nick? Yeah I remember that guy, he breaks *everything*, seriously if you\'re getting paid for fixing bugs, consider hiring him.",
+        "your mom":"echo 'Your mom is sooooo fat!' | less - You get that? Damn, Unix geeks.",
+        "regex":"http://stackoverflow.com/questions/1732348/regex-match-open-tags-except-xhtml-self-contained-tags/1732454#1732454",
+        "regexp":"See 'regex', having the URL in here twice doesn\'t fit the DRY principal.",
+        "eval":"So you want to summon the horrible abominations of hell, open the gates of the apocalypse and doom us all? Well, hold on a second then. *Doug here\'s someone that want\'s to talk with you!*",
+        "cheezburger":"**I can haz cheezburger?** Happy now..."
+    };
+    for(var i in stuff) {
+        this.thougthList[i] = stuff[i];
+    }
+        
     // Hosts
     this.mainURL = this.config.site;
-    this.mainHost = http.createClient(80, this.mainURL);
     this.chatURL = 'chat.' + this.mainURL;
+    
+    this.mainHost = http.createClient(80, this.mainURL);
     this.chatHost = http.createClient(80, this.chatURL);
     
     // Users
@@ -49,7 +70,7 @@ var ChatBot = Class(function(config, rooms) {
         this.openIDCookie = '';
         
         // here be dragons....
-   //     this.getOpenID();    
+        this.getOpenID();
     }
     
     
@@ -107,15 +128,18 @@ var ChatBot = Class(function(config, rooms) {
         this.log('[LEAVING] ' + rid);
         this.chatRequest('POST', '/chats/leave/' + rid, {'quiet': true}).end = function(res) {
             this.log('[LEFT] ' + rid);
-            fs.writeFileSync('bans.list', JSON.stringify(this.usersBanned));
-            fs.writeFileSync('answers.list', JSON.stringify(this.thougthList));
             this.rooms.splice(this.rooms.indexOf(rid, 1));
+            
+            fs.writeFileSync('bans.list', JSON.stringify(this.usersBanned));
+            fs.writeFileSync('thoughts.list', JSON.stringify(this.thougthList)); 
             callback();
         };
     },
     
     joinRoom: function(rid) {
         this.chatRequest('GET', '/rooms/' + rid).end = function(content) {
+            
+            // Get Key and start session
             var match = /me="fkey" type="hidden" value="(.*?)"/.exec(content);
             if (match) {
                 this.log('[JOINED] ' + rid);
@@ -126,12 +150,30 @@ var ChatBot = Class(function(config, rooms) {
                     this.running = true;
                     this.update();
                 }
+                
+                // Cache users
+                try {
+                    var exp = /StartChat([^]*?)chat\.sidebar\.loadingFinished/gim;                
+                    var script = exp.exec(content)[1];
+                    exp = /chat\.sidebar\.loadUser\(([0-9]+?), \("/gm;
+                    
+                    var m, list = [];
+                    while (m = exp.exec(script)) {
+                        list.push(parseInt(m[1]));
+                    }
+                    this.getUserInfo(list, function(users) {
+                        this.cacheUser(users);
+                    });
+                
+                } catch(e) {
+                    this.log('[INITIAL USER CACHE FAILED] ' + e);
+                }
             
             } else {
                 this.log('[FAILED] ' + rid);
             }
         };
-        this.log('[JOINING] ' + rid);  
+        this.log('[JOINING] ' + rid);
     },
     
 
@@ -147,7 +189,7 @@ var ChatBot = Class(function(config, rooms) {
         if (this.chatTimes[rid].last === -1) {
             options.since = 0;
             options.mode = 'Messages';
-            options.msgCount = 2;
+            options.msgCount = 0;
             url = '/chats/' + rid + '/events';
         
         } else {
@@ -186,8 +228,11 @@ var ChatBot = Class(function(config, rooms) {
             console.log(rid, uid, uname, msg);
             if (parts[0] === '?' || !this.commands[parts[0]]) {
                 var args = parts[0] === '?' ? parts.slice(1) : parts;
-                this.postMessage(this.thougthList[args.join(' ').toLowerCase()] 
-                                 || 'Me not knows ' + args.join(' ') + '... you knows it?', rid);
+                var errors = [
+                    'Huh? What\'s a"' + args.join(' ') + '" supposed to be? If you can\'t type you should reconsider your profession, what about writing the next Harray Potter? *Can\'t get any worse with that...*'
+                ];
+                
+                this.postMessage(this.thougthList[args.join(' ').toLowerCase()] || errors[Math.floor(Math.random() * error.length)], rid);
             
             } else if (this.commands[parts[0]]) {
                 this.log('[COMMAND ' + parts[0].toUpperCase() + ' #' + rid + '] ' + uname);
@@ -234,7 +279,9 @@ var ChatBot = Class(function(config, rooms) {
                 
                 var uid = msg.user_id;
                 if (uid && users.indexOf(uid) === -1 && msg.event_type !== 4) {
-                    if (!this.userCache[uid] || now - this.userCache[uid].lastUpdate > 600000) {
+                    if (!this.userCache[uid]
+                        || now - this.userCache[uid].lastUpdate > 600000) {
+                        
                         users.push(uid);
                     }
                 }
@@ -422,8 +469,8 @@ var ChatBot = Class(function(config, rooms) {
         }
         return parsed;
     },
-        
-    getOpenID: function(id) {
+    
+    getOpenID: function() {
         var that = this;
         var openSite = http.createClient(443, 'www.myopenid.com', true);
         var req = openSite.request('GET', 'https://www.myopenid.com/signin_password', {'host': 'www.myopenid.com'});
@@ -437,8 +484,7 @@ var ChatBot = Class(function(config, rooms) {
                 data.tid = /name="tid" value="(.*?)"/.exec(chunk)[1];
                 data.token = /name="token" value="(.*?)"/.exec(chunk)[1];
                 data._ = /name="_" value="(.*?)"/.exec(chunk)[1].substring(1);
-                that.log('Login data:', data.tid, data.token, data._);
-                that.getOpenIDLogin(id, data);
+                that.getOpenIDLogin(data);
             });
         });
         
@@ -446,9 +492,9 @@ var ChatBot = Class(function(config, rooms) {
         req.end();
     },
 
-    getOpenIDLogin: function(id, data) {
+    getOpenIDLogin: function(data) {
         var that = this;
-        var form = querystring.stringify({'password': id.secret, 'user_name': id.name,
+        var form = querystring.stringify({'password': this.config.secret, 'user_name': this.config.name,
                                           'tid': data.tid, 'token': data.token, '_': data._});
         
         var openSite = http.createClient(443, 'www.myopenid.com', true);
@@ -463,23 +509,23 @@ var ChatBot = Class(function(config, rooms) {
         req.on('response', function (res) {
             that.log('[COMPLETE] OpenID');
             that.openIDCookie = that.$parseCookies(res.headers['set-cookie']).join('; ') + ';';
-            that.onOpenIDDone(id);
+            that.onOpenIDComplete();
         });
         this.log('[LOGIN] OpenID');  
         req.end(form);
     },
     
-    onOpenIDDone: function(id) {   
+    onOpenIDComplete: function(id) {   
         var that = this;
         var url = '/server?openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.return_to=http%3A%2F%2Fstackoverflow.com%2Fusers%2Fauthenticate%2F%3Fs%3D869da063-5dcb-4fb3-8ed8-e6baafb7d6d6%26dnoa.userSuppliedIdentifier%3Dhttp%253A%252F%252Fmyopenid.com%252F&openid.realm=http%3A%2F%2Fstackoverflow.com%2Fusers%2Fauthenticate%2F&openid.mode=checkid_setup&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&openid.ns.alias3=http%3A%2F%2Fopenid.net%2Fsrv%2Fax%2F1.0&openid.alias3.if_available=alias1%2Calias2%2Calias3%2Calias4&openid.alias3.mode=fetch_request&openid.alias3.type.alias1=http%3A%2F%2Fschema.openid.net%2FnamePerson&openid.alias3.count.alias1=1&openid.alias3.type.alias2=http%3A%2F%2Fschema.openid.net%2Fcontact%2Femail&openid.alias3.count.alias2=1&openid.alias3.type.alias3=http%3A%2F%2Faxschema.org%2FnamePerson&openid.alias3.count.alias3=1&openid.alias3.type.alias4=http%3A%2F%2Faxschema.org%2Fcontact%2Femail&openid.alias3.count.alias4=1';
         var openSite = http.createClient(443, 'www.myopenid.com', true);
         var req = openSite.request('GET', url, {'Host': 'www.myopenid.com',
                                                 'Cookie': this.openIDCookie,
                                                 'Origin': 'https://www.myopenid.com',
-                                                'Referer': 'http://' + id.mainHost
+                                                'Referer': 'http://' + this.mainURL
                                                             + '/users/login?returnurl=/users/'
-                                                            + id.exchangeID + '/'
-                                                            + id.exchangeUser});
+                                                            + this.config.userID + '/'
+                                                            + this.config.user});
         
         req.on('response', function (res) {
             that.log('[COMPLETE] OpenID');
@@ -491,19 +537,19 @@ var ChatBot = Class(function(config, rooms) {
     
     onExchangeLogin: function(id, path) {
         var that = this;
-        var mainHost = http.createClient(80, id.mainHost);
+        var mainHost = http.createClient(80, this.mainURL);
         var req = mainHost.request('GET', '/users' + path.split('/users')[1],
-                                              {'Host': id.mainHost,
+                                              {'Host': this.mainURL,
                                                'Cookie': this.exchangeCookie,
-                                               'Origin': 'http://' + id.mainHost});
+                                               'Origin': 'http://' + this.mainURL});
         
         req.on('response', function (res) {
-            that.log('[COMPLETE]' + id.mainHost);
+            that.log('[COMPLETE] ' + that.mainURL);
             that.exchangeCookie = that.$parseCookies(res.headers['set-cookie']).join('; ') + ';';
             fs.writeFileSync('exchange.login', that.exchangeCookie);
             that.joinRooms();
         });
-        this.log('[AUTH] ' + id.mainHost);  
+        this.log('[AUTH] ' + this.mainURL);
         req.end();
     }
 });
@@ -513,5 +559,5 @@ var ChatBot = Class(function(config, rooms) {
 //    console.log(err.stack);
 //});
 
-var bot = new ChatBot('config', [1, 17]);
+new Kitten('config', [1, 17]);
 
