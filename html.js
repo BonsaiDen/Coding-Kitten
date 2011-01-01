@@ -1,3 +1,4 @@
+// Stolen from somewhere on the interwebz, I guess...
 var _entities = {
 	"&nbsp;": " ",
 	"&iexcl;": "¡",
@@ -256,10 +257,10 @@ var _entities = {
 function unescape_entity(input) {
 	if (input.charAt(1) === '#') {
 		return String.fromCharCode(parseInt(input.substr(2), 10));
-	
+
 	} else if (_entities.hasOwnProperty(input)) {
 		return _entities[input];
-	
+
 	} else {
 		return null;
 	}

@@ -2,3 +2,5 @@
 config
 *.list
 *.login
+*.swp
+*.jpg
