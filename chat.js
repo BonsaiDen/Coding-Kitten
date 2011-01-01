@@ -330,6 +330,7 @@ var Kitten = Class(function(config) {
         }
     },
 
+    // Currently ununused questio recognition
     $regex: [
         /.*(can|may)(?:\s|\s.*?\s)(you|one|i|they)(?:\s|\s.*?\s)ask(?:\s|\s.*?\s)(you|something|question).*?\?/i,
         /.*(how|can)(?:\s|\s.*?\s)(can|i|does|one|you)\s(.*)\?/i,
@@ -352,7 +353,8 @@ var Kitten = Class(function(config) {
             }
         }
         if (id != -1) {
-            this.postMessage('    Matched: ' + this.$regex[id].toString() + '\n' + m.slice(1), rid, 60000);
+            this.postMessage('    Matched: ' + this.$regex[id].toString()
+                             + '\n' + m.slice(1), rid, 60000);
         }
     },
 
@@ -363,46 +365,7 @@ var Kitten = Class(function(config) {
         switch(msg.event_type) {
             case 8:
             case 1:
-                if (msg.content && msg.content.substring(0, 4) !== '    ') {
-                    if (rid === 1 && msg.user_id !== this.userID) {
-                        this.parseQuestion(this.$unescapeHTML(msg.content.trim()), rid);
-                    }
-
-                    var data = msg.content.toLowerCase();
-                    if (data.indexOf(':kitten') === -1 && data.indexOf('!kitten') === -1 && msg.user_id !== this.userID) {
-                        if (rid !== 1
-                            && data.indexOf('function') === -1
-                            && data.indexOf('//') === -1) {
-
-                            var text = this.$unescapeHTML(msg.content.trim().replace(/\s+/g, ' ').replace(/<.*?>/g, '').replace(/@[^\s]+/gi, ''));
-                            this.chatLog.push(text.trim());
-
-                            var more = this.chatLog.length - 500;
-                            if (more > 0) {
-                                this.chatLog.splice(0, more);
-                            }
-                        }
-                        if (data.indexOf('@codingkitten') === 0) {
-                            this.commands.reply.execute(rid, msg.user_id, [msg]);
-                            break;
-                        }
-                    }
-                }
-
-                var content = msg.content;
-                if (content) {
-                    if (content.substring(0, 4) === '    ') {
-                        // ???
-                    }
-                    content = this.$unescapeHTML(content.trim().replace(/\s+/g, ' '));
-                    var cmd = content.substring(0, 8);
-                    if (msg.user_id !== this.userID
-                        && (cmd === ':kitten ' || cmd === '!kitten ') && !init) {
-
-                        this.handleCommand(rid, msg.user_id, msg.user_name,
-                                           content);
-                    }
-                }
+                this.handleAction(rid, msg, init);
                 break;
 
             case 3:
@@ -415,6 +378,52 @@ var Kitten = Class(function(config) {
 
             default:
                 break;
+        }
+    },
+
+    handleAction: function(rid, msg, init) {
+        if (msg.content && msg.content.substring(0, 4) !== '    ') {
+            if (rid === 1 && msg.user_id !== this.userID) {
+                this.parseQuestion(this.$unescapeHTML(msg.content.trim()), rid);
+            }
+
+            var data = msg.content.toLowerCase();
+            if (data.indexOf(':kitten') === -1 &&
+                data.indexOf('!kitten') === -1 && msg.user_id !== this.userID) {
+
+                if (rid !== 1
+                    && data.indexOf('function') === -1
+                    && data.indexOf('//') === -1) {
+
+                    var text = this.$unescapeHTML(msg.content.trim().replace(/\s+/g, ' ').replace(/<.*?>/g, '').replace(/@[^\s]+/gi, ''));
+                    this.chatLog.push(text.trim());
+
+                    var more = this.chatLog.length - 500;
+                    if (more > 0) {
+                        this.chatLog.splice(0, more);
+                    }
+                }
+
+                if (data.indexOf('@codingkitten') === 0) {
+                    this.commands.reply.execute(rid, msg.user_id, [msg]);
+                    break;
+                }
+            }
+        }
+
+        var content = msg.content;
+        if (content) {
+            if (content.substring(0, 4) === '    ') {
+                // ???
+            }
+            content = this.$unescapeHTML(content.trim().replace(/\s+/g, ' '));
+            var cmd = content.substring(0, 8);
+            if (msg.user_id !== this.userID
+                && (cmd === ':kitten ' || cmd === '!kitten ') && !init) {
+
+                this.handleCommand(rid, msg.user_id, msg.user_name,
+                                   content);
+            }
         }
     },
 
@@ -501,6 +510,7 @@ var Kitten = Class(function(config) {
 
 
     // Users -------------------------------------------------------------------
+    // TODO: Make this work with other sites then SO
     getUserInfo: function(uids, callback) {
         var req = this.chatRequest('POST', '/user/info',
                                    {'ids': uids.toString()});
@@ -512,6 +522,7 @@ var Kitten = Class(function(config) {
         };
     },
 
+    // TODO: Make this work with other sites then SO
     getUserData: function(name, callback) {
         var url = '/users/filter/' + querystring.escape(name.toLowerCase())
                   + '?_=' + new Date().getTime() + '&tab=Reputation';
@@ -526,6 +537,7 @@ var Kitten = Class(function(config) {
         };
     },
 
+    // TODO: Make this work with other sites then SO
     resolveUser: function(user, callback, that) {
         var id = +user;
         var name = user.trimLeft('@').trim();
@@ -549,6 +561,7 @@ var Kitten = Class(function(config) {
         }
     },
 
+    // TODO: Make this work with other sites then SO
     cacheUser: function(users) {
         for(var i = 0, l = users.length; i < l; i++) {
             var user = users[i];
